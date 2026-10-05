@@ -12,7 +12,13 @@
         .folder::before { content: "📁 "; }
         .file-container { display: flex; align-items: center; gap: 15px; margin: 6px 0; }
         .file { padding-left: 20px; font-weight: normal; }
-        .file::before { content: "📄 "; }
+        
+        /* Íconos según el tipo de archivo */
+        .file-html::before { content: "🌐 "; }
+        .file-css::before { content: "🎨 "; }
+        .file-js::before { content: "⚡ "; }
+        .file-generic::before { content: "📄 "; }
+        
         a { color: #a6e3a1; text-decoration: none; transition: 0.2s; }
         a:hover { text-decoration: underline; color: #89b4fa; }
         
@@ -26,7 +32,7 @@
         .inputs-group { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
         input, button { padding: 8px; background: #11111b; border: 1px solid #45475a; color: #cdd6f4; border-radius: 4px; flex: 1; min-width: 150px; }
         button { background: #89b4fa; color: #11111b; cursor: pointer; font-weight: bold; flex: none; }
-        textarea { width: 100%; height: 110px; background: #11111b; color: #a6e3a1; font-family: monospace; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #45475a; box-sizing: border-box; }
+        textarea { width: 100%; height: 140px; background: #11111b; color: #a6e3a1; font-family: monospace; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #45475a; box-sizing: border-box; }
         .empty-msg { color: #a6adc8; font-style: italic; padding-left: 20px; margin-top: 10px; }
     </style>
 </head>
@@ -43,19 +49,19 @@
         </li>
     </ul>
 
-    <!-- 🛠️ PANEL GENERADOR -->
-    <div class="admin-panel">
-        <div class="admin-title">🛠️ Panel de Control: Administrar Servidor</div>
-        <p style="font-size: 12px; color: #a6adc8; margin: 0 0 10px 0;">Ingresa archivos nuevos. Si la carpeta ya existe, el archivo se guardará dentro de ella automáticamente:</p>
+    <!-- 🛠️ PANEL GENERADOR MANUAL -->
+    <div class="admin-panel" id="panel-control">
+        <div class="admin-title">🛠️ Panel de Control: Administrar Servidor (Separado por Comas)</div>
+        <p style="font-size: 12px; color: #a6adc8; margin: 0 0 10px 0;">Ingresa tus archivos separados por comas para meter varios de un solo golpe:</p>
         
         <div class="inputs-group">
-            <input type="text" id="nueva-carpeta" placeholder="Carpeta (ej: parcial1)">
-            <input type="text" id="nuevo-archivo" placeholder="Archivo (ej: tarea.html)">
+            <input type="text" id="nueva-carpeta" placeholder="Carpeta (ej: clase1)">
+            <input type="text" id="nuevo-archivo" placeholder="Archivos (ej: index.html, estilos.css, script.js)">
             <button onclick="agregarProyecto()">Añadir al Servidor</button>
         </div>
 
         <div id="output-seccion" style="display:none;">
-            <p id="output-instruccion" style="font-size: 12px; color: #f38ba8; margin-top: 10px;">👇 Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 65):</p>
+            <p id="output-instruccion" style="font-size: 12px; color: #f38ba8; margin-top: 10px;">👇 Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 66):</p>
             <textarea id="codigo-output" readonly></textarea>
         </div>
     </div>
@@ -64,13 +70,21 @@
         // ==========================================
         // 📦 BASE DE DATOS INTERNA (TU PORTAFOLIO)
         // ==========================================
-        // Tu lista inicia limpia. Ve agregando tus tareas usando el panel de abajo.
         const MIS_PROYECTOS = [
-
+            { carpeta: "wiki", archivo: "Wikipedia.css" },
+            { carpeta: "wiki", archivo: "Wikipedia.html" }
         ];
         // ==========================================
 
-        // Función para renderizar el árbol visual de forma agrupada
+        function obtenerClaseIcono(nombreArchivo) {
+            const ext = nombreArchivo.split('.').pop().toLowerCase();
+            if (ext === 'html' || ext === 'htm') return 'file-html';
+            if (ext === 'css') return 'file-css';
+            if (ext === 'js') return 'file-js';
+            return 'file-generic';
+        }
+
+        // Renderizar el árbol visual agrupado
         function cargarArbol() {
             const container = document.getElementById("lista-proyectos");
             container.innerHTML = "";
@@ -80,7 +94,6 @@
                 return;
             }
 
-            // Estructurar los datos en un Objeto Mapa para agrupar por carpeta
             const mapaCarpetas = {};
             MIS_PROYECTOS.forEach(p => {
                 if (!mapaCarpetas[p.carpeta]) {
@@ -89,11 +102,9 @@
                 mapaCarpetas[p.carpeta].push(p.archivo);
             });
 
-            // Ordenar las carpetas alfabéticamente
             const nombresCarpetasOrdenadas = Object.keys(mapaCarpetas).sort();
 
             nombresCarpetasOrdenadas.forEach(nomCarpeta => {
-                // Crear nodo de la Carpeta
                 const liFolder = document.createElement("li");
                 liFolder.className = "folder";
                 liFolder.textContent = nomCarpeta;
@@ -101,7 +112,6 @@
                 const ulSub = document.createElement("ul");
                 ulSub.className = "tree";
 
-                // Ordenar los archivos de esta carpeta alfabéticamente
                 const archivosOrdenados = mapaCarpetas[nomCarpeta].sort();
 
                 archivosOrdenados.forEach(nomArchivo => {
@@ -109,14 +119,14 @@
                     liFileContainer.className = "file-container";
 
                     const spanFile = document.createElement("span");
-                    spanFile.className = "file";
+                    const claseIcono = obtenerClaseIcono(nomArchivo);
+                    spanFile.className = `file ${claseIcono}`;
 
                     const link = document.createElement("a");
                     link.href = `./${nomCarpeta}/${nomArchivo}`; 
                     link.target = "_blank";
                     link.textContent = nomArchivo;
 
-                    // Botón para eliminar este archivo específico
                     const btnDelete = document.createElement("button");
                     btnDelete.className = "btn-delete-item";
                     btnDelete.textContent = "[Eliminar]";
@@ -124,7 +134,10 @@
 
                     spanFile.appendChild(link);
                     liFileContainer.appendChild(spanFile);
-                    liFileContainer.appendChild(btnDelete);
+                    
+                    if (!window.location.hostname.includes('github.io')) {
+                        liFileContainer.appendChild(btnDelete);
+                    }
                     ulSub.appendChild(liFileContainer);
                 });
 
@@ -133,7 +146,10 @@
             });
         }
 
-        // Generar texto estructurado para el Array
+        if (window.location.hostname.includes('github.io')) {
+            document.getElementById('panel-control').style.display = 'none';
+        }
+
         function generarTextoCodigo(arreglo) {
             let textoCodigo = "        const MIS_PROYECTOS = [\n";
             arreglo.forEach((p, index) => {
@@ -143,55 +159,69 @@
             return textoCodigo;
         }
 
-        // Función para añadir (y agrupar) un archivo
+        // Función con la lógica automática para separar por comas ", "
         function agregarProyecto() {
             const inputCarpeta = document.getElementById("nueva-carpeta").value.trim();
-            let inputArchivo = document.getElementById("nuevo-archivo").value.trim();
+            const inputArchivosRaw = document.getElementById("nuevo-archivo").value.trim();
 
             if (inputCarpeta === "") {
                 alert("Por favor escribe el nombre de la carpeta.");
                 return;
             }
-            if (inputArchivo === "") { inputArchivo = "index.html"; }
 
-            // Verificar duplicados exactos
-            const existe = MIS_PROYECTOS.some(p => p.carpeta === inputCarpeta && p.archivo === inputArchivo);
-            if (existe) {
-                alert("Este archivo ya se encuentra registrado dentro de esa carpeta.");
+            // Si el campo de archivos está vacío, por defecto agregamos index.html
+            let listaArchivosAProcesar = ["index.html"];
+            
+            if (inputArchivosRaw !== "") {
+                // El split separa la cadena por cada coma (puede tener espacio o no)
+                listaArchivosAProcesar = inputArchivosRaw.split(',').map(item => item.trim()).filter(item => item !== "");
+            }
+
+           // Creamos una copia del array actual de la base de datos
+            let nuevoArreglo = [...MIS_PROYECTOS];
+            let archivosAgregadosContador = 0;
+
+            listaArchivosAProcesar.forEach(nombreArchivo => {
+                // Verificar si ya existe el par carpeta-archivo para no duplicar
+                const existe = nuevoArreglo.some(p => p.carpeta === inputCarpeta && p.archivo === nombreArchivo);
+                if (!existe) {
+                    nuevoArreglo.push({ carpeta: inputCarpeta, archivo: nombreArchivo });
+                    archivosAgregadosContador++;
+                }
+            });
+
+            if (archivosAgregadosContador === 0) {
+                alert("Todos los archivos ingresados ya estaban registrados en esa carpeta.");
                 return;
             }
 
-            // Insertar el nuevo elemento
-            const nuevoArreglo = [...MIS_PROYECTOS, { carpeta: inputCarpeta, archivo: inputArchivo }];
-            // Ordenar el arreglo general
+            // Ordenar alfabéticamente
             nuevoArreglo.sort((a, b) => a.carpeta.localeCompare(b.carpeta) || a.archivo.localeCompare(b.archivo));
             
-            document.getElementById("output-instruccion").textContent = "👇 Añadido con éxito. Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 65):";
+            document.getElementById("output-instruccion").textContent = `👇 ¡Éxito! Se procesaron ${archivosAgregadosContador} archivo(s). Copia estas líneas y reemplázalas en la línea 66:`;
             document.getElementById("codigo-output").value = generarTextoCodigo(nuevoArreglo);
             document.getElementById("output-seccion").style.display = "block";
             
-            // Limpiar campos de texto
             document.getElementById("nueva-carpeta").value = "";
             document.getElementById("nuevo-archivo").value = "";
         }
 
         // Función para eliminar un archivo del árbol
         function eliminarProyecto(carpeta, archivo) {
-            if (!confirm(`¿Estás seguro de que quieres quitar "${archivo}" de la carpeta "${carpeta}" en el índice?`)) {
+            if (!confirm(`¿Estás seguro de que quieres quitar "${archivo}" de la carpeta "${carpeta}"?`)) {
                 return;
             }
 
-            // Filtrar quitando el elemento seleccionado
             const nuevoArreglo = MIS_PROYECTOS.filter(p => !(p.carpeta === carpeta && p.archivo === archivo));
             
-            document.getElementById("output-instruccion").textContent = "👇 Eliminado del árbol. Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 65) para guardar el cambio:";
+            document.getElementById("output-instruccion").textContent = "👇 Eliminado del árbol. Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 66) para guardar el cambio:";
             document.getElementById("codigo-output").value = generarTextoCodigo(nuevoArreglo);
             document.getElementById("output-seccion").style.display = "block";
             
-            alert("Estructura removida en pantalla. Recuerda copiar el código generado abajo y actualizar tu archivo index.html para guardar los cambios permanentes.");
+            alert("Removido temporalmente. Recuerda sobreescribir el código generado abajo en tu index.html de VS Code.");
         }
 
-        // Inicializar portafolio
+        // Inicializar el árbol al cargar la página
         cargarArbol();
     </script>
 </body>
