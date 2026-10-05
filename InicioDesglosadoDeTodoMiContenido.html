@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Trabajos de Diseño Web</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e1e2e; color: #cdd6f4; padding: 40px; }
+        h1 { color: #89b4fa; border-bottom: 2px solid #45475a; padding-bottom: 10px; }
+        .tree { list-style-type: none; padding-left: 20px; }
+        .folder { font-weight: bold; color: #f9e2af; margin-top: 12px; }
+        .folder::before { content: "📁 "; }
+        .file-container { display: flex; align-items: center; gap: 15px; margin: 6px 0; }
+        .file { padding-left: 20px; font-weight: normal; }
+        .file::before { content: "📄 "; }
+        a { color: #a6e3a1; text-decoration: none; transition: 0.2s; }
+        a:hover { text-decoration: underline; color: #89b4fa; }
+        
+        /* Botón Eliminar del Árbol */
+        .btn-delete-item { background: transparent; border: none; color: #f38ba8; cursor: pointer; font-size: 11px; padding: 2px 6px; border-radius: 4px; transition: 0.2s; }
+        .btn-delete-item:hover { background: #585b70; text-decoration: underline; }
+
+        /* Panel de Administrador */
+        .admin-panel { margin-top: 80px; padding: 20px; background: #313244; border-radius: 8px; border: 1px dashed #45475a; }
+        .admin-title { font-size: 14px; color: #f5e0dc; margin-bottom: 10px; font-weight: bold; }
+        .inputs-group { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        input, button { padding: 8px; background: #11111b; border: 1px solid #45475a; color: #cdd6f4; border-radius: 4px; flex: 1; min-width: 150px; }
+        button { background: #89b4fa; color: #11111b; cursor: pointer; font-weight: bold; flex: none; }
+        textarea { width: 100%; height: 110px; background: #11111b; color: #a6e3a1; font-family: monospace; margin-top: 10px; padding: 10px; border-radius: 4px; border: 1px solid #45475a; box-sizing: border-box; }
+        .empty-msg { color: #a6adc8; font-style: italic; padding-left: 20px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>🗄️ Raíz del Servidor: Portafolio de Trabajos</h1>
+    
+    <!-- ÁRBOL DE CARPETAS -->
+    <ul class="tree">
+        <li class="folder">Raíz del Proyecto (./)
+            <ul id="lista-proyectos" class="tree">
+                <!-- Se carga dinámicamente -->
+            </ul>
+        </li>
+    </ul>
+
+    <!-- 🛠️ PANEL GENERADOR -->
+    <div class="admin-panel">
+        <div class="admin-title">🛠️ Panel de Control: Administrar Servidor</div>
+        <p style="font-size: 12px; color: #a6adc8; margin: 0 0 10px 0;">Ingresa archivos nuevos. Si la carpeta ya existe, el archivo se guardará dentro de ella automáticamente:</p>
+        
+        <div class="inputs-group">
+            <input type="text" id="nueva-carpeta" placeholder="Carpeta (ej: parcial1)">
+            <input type="text" id="nuevo-archivo" placeholder="Archivo (ej: tarea.html)">
+            <button onclick="agregarProyecto()">Añadir al Servidor</button>
+        </div>
+
+        <div id="output-seccion" style="display:none;">
+            <p id="output-instruccion" style="font-size: 12px; color: #f38ba8; margin-top: 10px;">👇 Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 65):</p>
+            <textarea id="codigo-output" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 📦 BASE DE DATOS INTERNA (TU PORTAFOLIO)
+        // ==========================================
+        // Tu lista inicia limpia. Ve agregando tus tareas usando el panel de abajo.
+        const MIS_PROYECTOS = [
+
+        ];
+        // ==========================================
+
+        // Función para renderizar el árbol visual de forma agrupada
+        function cargarArbol() {
+            const container = document.getElementById("lista-proyectos");
+            container.innerHTML = "";
+
+            if (MIS_PROYECTOS.length === 0) {
+                container.innerHTML = '<li class="empty-msg">El servidor está vacío. Usa el panel de abajo para añadir tu primera carpeta.</li>';
+                return;
+            }
+
+            // Estructurar los datos en un Objeto Mapa para agrupar por carpeta
+            const mapaCarpetas = {};
+            MIS_PROYECTOS.forEach(p => {
+                if (!mapaCarpetas[p.carpeta]) {
+                    mapaCarpetas[p.carpeta] = [];
+                }
+                mapaCarpetas[p.carpeta].push(p.archivo);
+            });
+
+            // Ordenar las carpetas alfabéticamente
+            const nombresCarpetasOrdenadas = Object.keys(mapaCarpetas).sort();
+
+            nombresCarpetasOrdenadas.forEach(nomCarpeta => {
+                // Crear nodo de la Carpeta
+                const liFolder = document.createElement("li");
+                liFolder.className = "folder";
+                liFolder.textContent = nomCarpeta;
+
+                const ulSub = document.createElement("ul");
+                ulSub.className = "tree";
+
+                // Ordenar los archivos de esta carpeta alfabéticamente
+                const archivosOrdenados = mapaCarpetas[nomCarpeta].sort();
+
+                archivosOrdenados.forEach(nomArchivo => {
+                    const liFileContainer = document.createElement("li");
+                    liFileContainer.className = "file-container";
+
+                    const spanFile = document.createElement("span");
+                    spanFile.className = "file";
+
+                    const link = document.createElement("a");
+                    link.href = `./${nomCarpeta}/${nomArchivo}`; 
+                    link.target = "_blank";
+                    link.textContent = nomArchivo;
+
+                    // Botón para eliminar este archivo específico
+                    const btnDelete = document.createElement("button");
+                    btnDelete.className = "btn-delete-item";
+                    btnDelete.textContent = "[Eliminar]";
+                    btnDelete.onclick = () => eliminarProyecto(nomCarpeta, nomArchivo);
+
+                    spanFile.appendChild(link);
+                    liFileContainer.appendChild(spanFile);
+                    liFileContainer.appendChild(btnDelete);
+                    ulSub.appendChild(liFileContainer);
+                });
+
+                liFolder.appendChild(ulSub);
+                container.appendChild(liFolder);
+            });
+        }
+
+        // Generar texto estructurado para el Array
+        function generarTextoCodigo(arreglo) {
+            let textoCodigo = "        const MIS_PROYECTOS = [\n";
+            arreglo.forEach((p, index) => {
+                textoCodigo += `            { carpeta: "${p.carpeta}", archivo: "${p.archivo}" }${index < arreglo.length - 1 ? ',' : ''}\n`;
+            });
+            textoCodigo += "        ];";
+            return textoCodigo;
+        }
+
+        // Función para añadir (y agrupar) un archivo
+        function agregarProyecto() {
+            const inputCarpeta = document.getElementById("nueva-carpeta").value.trim();
+            let inputArchivo = document.getElementById("nuevo-archivo").value.trim();
+
+            if (inputCarpeta === "") {
+                alert("Por favor escribe el nombre de la carpeta.");
+                return;
+            }
+            if (inputArchivo === "") { inputArchivo = "index.html"; }
+
+            // Verificar duplicados exactos
+            const existe = MIS_PROYECTOS.some(p => p.carpeta === inputCarpeta && p.archivo === inputArchivo);
+            if (existe) {
+                alert("Este archivo ya se encuentra registrado dentro de esa carpeta.");
+                return;
+            }
+
+            // Insertar el nuevo elemento
+            const nuevoArreglo = [...MIS_PROYECTOS, { carpeta: inputCarpeta, archivo: inputArchivo }];
+            // Ordenar el arreglo general
+            nuevoArreglo.sort((a, b) => a.carpeta.localeCompare(b.carpeta) || a.archivo.localeCompare(b.archivo));
+            
+            document.getElementById("output-instruccion").textContent = "👇 Añadido con éxito. Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 65):";
+            document.getElementById("codigo-output").value = generarTextoCodigo(nuevoArreglo);
+            document.getElementById("output-seccion").style.display = "block";
+            
+            // Limpiar campos de texto
+            document.getElementById("nueva-carpeta").value = "";
+            document.getElementById("nuevo-archivo").value = "";
+        }
+
+        // Función para eliminar un archivo del árbol
+        function eliminarProyecto(carpeta, archivo) {
+            if (!confirm(`¿Estás seguro de que quieres quitar "${archivo}" de la carpeta "${carpeta}" en el índice?`)) {
+                return;
+            }
+
+            // Filtrar quitando el elemento seleccionado
+            const nuevoArreglo = MIS_PROYECTOS.filter(p => !(p.carpeta === carpeta && p.archivo === archivo));
+            
+            document.getElementById("output-instruccion").textContent = "👇 Eliminado del árbol. Copia estas líneas y reemplázalas en la sección BASE DE DATOS (Línea 65) para guardar el cambio:";
+            document.getElementById("codigo-output").value = generarTextoCodigo(nuevoArreglo);
+            document.getElementById("output-seccion").style.display = "block";
+            
+            alert("Estructura removida en pantalla. Recuerda copiar el código generado abajo y actualizar tu archivo index.html para guardar los cambios permanentes.");
+        }
+
+        // Inicializar portafolio
+        cargarArbol();
+    </script>
+</body>
+</html>
